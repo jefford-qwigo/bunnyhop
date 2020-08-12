@@ -17,25 +17,41 @@ class BaseBunny(object):
         return header
 
     def call_api(self, api_url, api_method, header, api_data={}, format=True):
-        r = requests.request(method=api_method, url=api_url, headers=header, params=api_data)
+        if api_method == "POST":
+            r = requests.request(method=api_method, url=api_url, headers=header, json=api_data)
+        else:
+            r = requests.request(method=api_method, url=api_url, headers=header, params=api_data)
+        
         if format:
             return self.format_response(r)
         else:
             return r
 
     def format_response(self, r):
-        if r.status_code == 201 or r.status_code == 200 or r.status_code == 204:
+        if r.status_code == 404:
             response = {
-                "status": "successful",
-                "status_code": r.status_code,
-                "result": r.text,
-            }
+                    "status": "error",
+                    "status_code": r.status_code,
+                    "result": None,
+                }
             return json.dumps(response)
-            
         else:
-            response = {
-                "status": "error",
-                "status_code": r.status_code,
-                "result": None,
-            }
-            return json.dumps(response)
+            r_header = r.headers.get('content-type')
+            if(r_header.__contains__('application/json')):
+                if r.status_code == 201 or r.status_code == 200 or r.status_code == 204:
+                    response = {
+                        "status": "successful",
+                        "status_code": r.status_code,
+                        "result": r.text,
+                    }
+                    return json.dumps(response)
+            
+                else:
+                    response = {
+                        "status": "error",
+                        "status_code": r.status_code,
+                        "result": r.text,
+                    }
+                    return json.dumps(response)
+            else:
+                return "incorrect API Key"
