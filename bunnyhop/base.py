@@ -11,7 +11,8 @@ class BaseBunny(object):
     def get_header(self):
         header = {
             'Content-Type': 'application/json',
-            'accesskey': self.api_key
+            'Accept': 'application/json',
+            'AccessKey': self.api_key
         }
         return header
 
