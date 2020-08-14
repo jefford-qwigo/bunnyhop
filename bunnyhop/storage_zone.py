@@ -1,5 +1,5 @@
 from bunnyhop.base import BaseBunny
-from .url_settings import *
+from .url_settings import bunnycdn_storage_url
 import json
 import os
 

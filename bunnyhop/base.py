@@ -1,57 +1,54 @@
+from json import JSONDecodeError
+
 import requests
-import json
-from .url_settings import *
 
-class BaseBunny(object):
+from envs import env
+from valley.contrib import Schema
+# Imports for other modules
+from valley.properties import FloatProperty, CharProperty, ListProperty, IntegerProperty, EmailProperty, \
+    DateTimeProperty, BooleanProperty, SlugProperty
 
-    def __init__(self, api_key):
+
+class BaseBunny(Schema):
+    endpoint_url = env('BUNNYCDN_API_ENDPOINT', 'https://bunnycdn.com/api')
+
+    def __init__(self,
+                 api_key,
+                 endpoint_url=None,
+                 **kwargs
+                 ):
         self.api_key = api_key
-        self.endpoint_url = bunnycdn_url
+        if endpoint_url:
+            self.endpoint_url = endpoint_url
+        super().__init__(**kwargs)
+
+    def __repr__(self):
+        return '<{class_name}: {uni} >'.format(
+            class_name=self.__class__.__name__, uni=self.__str__())
 
     def get_header(self):
         header = {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'AccessKey': self.api_key
+            'accesskey': self.api_key
         }
         return header
 
-    def call_api(self, api_url, api_method, header, api_data={}, format=True):
-        if api_method == "POST":
-            r = requests.request(method=api_method, url=api_url, headers=header, json=api_data)
+    def get_url(self, api_url, endpoint_url):
+        if endpoint_url:
+            url = f"{endpoint_url}{api_url}"
         else:
-            r = requests.request(method=api_method, url=api_url, headers=header, params=api_data)
-        
-        if format:
-            return self.format_response(r)
-        else:
-            return r
+            url = f"{self.endpoint_url}{api_url}"
+        return url
 
-    def format_response(self, r):
-        if r.status_code == 404:
-            response = {
-                    "status": "error",
-                    "status_code": r.status_code,
-                    "result": None,
-                }
-            return json.dumps(response)
-        else:
-            r_header = r.headers.get('content-type')
-            if(r_header.__contains__('application/json')):
-                if r.status_code == 201 or r.status_code == 200 or r.status_code == 204:
-                    response = {
-                        "status": "successful",
-                        "status_code": r.status_code,
-                        "result": r.text,
-                    }
-                    return json.dumps(response)
-            
-                else:
-                    response = {
-                        "status": "error",
-                        "status_code": r.status_code,
-                        "result": r.text,
-                    }
-                    return json.dumps(response)
-            else:
-                return "incorrect API Key"
+    def call_api(self, api_url, api_method, header=None, params={}, data={}, json_data={}, endpoint_url=None):
+        if not header:
+            header = self.get_header()
+        r = requests.request(
+                method=api_method, url=self.get_url(api_url, endpoint_url), headers=header, params=params, data=data,
+                json=json_data)
+        try:
+            return r.json()
+        except JSONDecodeError:
+            return r.content
+
