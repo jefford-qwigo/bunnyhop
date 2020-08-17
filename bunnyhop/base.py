@@ -6,7 +6,7 @@ from envs import env
 from valley.contrib import Schema
 # Imports for other modules
 from valley.properties import FloatProperty, CharProperty, ListProperty, IntegerProperty, EmailProperty, \
-    DateTimeProperty, BooleanProperty, SlugProperty
+    DateTimeProperty, BooleanProperty, SlugProperty, DictProperty
 
 
 class BaseBunny(Schema):
@@ -52,3 +52,30 @@ class BaseBunny(Schema):
         except JSONDecodeError:
             return r.content
 
+
+class BaseStorageBunny(BaseBunny):
+    storage_endpoint_url = env('BUNNYCDN_STORAGE_API_ENDPOINT', 'storage.bunnycdn.com')
+
+    def get_storage_header(self):
+        return {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'AccessKey': self.api_key
+        }
+
+    def get_storage_endpoint(self, region):
+        return f"https://{region}.{self.storage_endpoint_url}"
+
+    def get_region(self):
+        return self.Region.lower()
+
+    def call_storage_api(self, api_url, api_method, header=None, params={}, data={}, json_data={}, files=None,
+                         endpoint_url=None):
+        if not header:
+            header = self.get_storage_header()
+        if not endpoint_url:
+            endpoint_url = self.get_storage_endpoint(self.get_region())
+        if files:
+            return requests.put(self.get_url(api_url, endpoint_url), headers=header, files=files)
+        return self.call_api(api_url, api_method, header=header, params={}, data=params, json_data=json_data,
+                             endpoint_url=endpoint_url)
