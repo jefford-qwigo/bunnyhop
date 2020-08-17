@@ -64,7 +64,7 @@ class BaseStorageBunny(BaseBunny):
         }
 
     def get_storage_endpoint(self, region):
-        return f"https://{region}.{self.storage_endpoint_url}"
+        return f"https://{self.storage_endpoint_url}"
 
     def get_region(self):
         return self.Region.lower()
