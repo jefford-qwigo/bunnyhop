@@ -55,30 +55,20 @@ class StorageZone(base.BaseStorageBunny):
     def delete(self):
         return self.call_api(f"/storagezone/{self.Id}", "DELETE")
 
-    def all(self, folder):
-        header = {
-            'Accept': 'application/json',
-            'AccessKey': self.Password
-        }
+    def all(self, folder=''):
         if not folder.endswith('/'):
             folder = f"{folder}/"
-            
-        return [StorageObject(self.api_key, self, **i) for i in self.call_storage_api(f"/{self.Name}/{folder}", "GET", header=header)]
+        return [StorageObject(self.api_key, self, **i) for i in self.call_storage_api(f"/{self.Name}/{folder}", "GET")]
 
-    def get(self, file_path, file_name):
-        header={'AccessKey': self.Password}
-        return self.call_storage_api(f"/{self.Name}/{file_path}/{file_name}", "GET", header=header)
+    def get(self, file_path):
+        return self.call_storage_api(f"/{self.Name}/{file_path}", "GET")
 
     def head_file(self, file_path):
         return self.call_storage_api(f"/{self.Name}/{file_path}", "HEAD")
 
     def upload_file(self, dest_path, file_name, local_path):
-        header = {
-            'Checksum': '',
-            'AccessKey': self.Password
-        }
-        return self.call_storage_api(f"/{self.Name}/{dest_path}/{file_name}", "PUT", header=header,
-                                     files={'file': open(local_path, 'rb').read()})
+        return self.call_storage_api(f"/{self.Name}/{dest_path}/{file_name}", "PUT",
+                                     data=open(local_path, 'rb').read())
 
     def create_file(self, file_name, content):
         pass
@@ -86,7 +76,7 @@ class StorageZone(base.BaseStorageBunny):
     def create_json(self, key, data_dict):
         f = BytesIO(json.dumps(data_dict).encode())
         return self.call_storage_api(f"/{self.Name}/{key}", "PUT",
-                                     files={key: (key, f)})
+                                     data=f.read())
 
 
 class StorageObject(base.BaseStorageBunny):
@@ -123,14 +113,5 @@ class StorageObject(base.BaseStorageBunny):
         return self.storage_zone.Region.lower()
 
     def delete(self):
-        header={'AccessKey': self.api_key}
-        return self.call_storage_api(f"/{self.storage_zone.Name}/{self.Path}/{self.ObjectName}", "DELETE", header=header)
+        return self.call_storage_api(f"/{self.storage_zone.Name}/{self.Path}/{self.ObjectName}", "DELETE")
 
-
-    def download(self):
-        header={'AccessKey': self.api_key}
-        r=self.call_storage_api(f"{self.Path}/{self.ObjectName}", "GET", header=header)
-        with open(self.ObjectName, 'wb') as w:
-            w.write(r)
-        
-        return w
