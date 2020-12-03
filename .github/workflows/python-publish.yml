@@ -33,3 +33,5 @@ jobs:
       uses: JRubics/poetry-publish@v1
       with:
         pypi_token: ${{ secrets.TESTPYPI_BUNNYHOP_TOKEN }}
+        repository_name: 'testpypi'
+        repository_url: 'https://test.pypi.org/legacy/'
