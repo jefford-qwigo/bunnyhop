@@ -6,10 +6,6 @@ name: Test Publish
 on:
   push:
     branches: [ master ]
-# The PR will temporarily try to validate the use
-#! REMOVE AFTER TESTING!
-  pull_request:
-    branches: [ master ]
 
 jobs:
   deploy:
